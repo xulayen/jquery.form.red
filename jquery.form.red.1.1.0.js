@@ -1,26 +1,59 @@
 /**
- * Created by Administrator on 2015/4/2.
+ * Created by layen.xu on 2016/05/18 for update.
  * 时间：2012-6-6
- 作用：一对form标签下有多个（包括一个）表单需要提交时，提交当前作用域中的表单项做出相应的验证
- 处理问题：一个aspx页面下只能有一个form表单（加了runat='server'）
- 约定：当前body元素下可以有多个form表单：凡是class='form'的元素都视为一个表单元素，此“表单”元素下有相应的表单项
- 其中包含一个含有class='check'的按钮，当点击此按钮的时候会首先验证表单项中含有class='notnull'的表单项，其次验证表单项中含有regex='/^$/'的
- 表单项，如果验证失败，会抛出相应的有好提示nullmsg='不能为空' 或 logicmsg='只能是数字'。
- 每个表单项验证成功之后class='check'的按钮会触发一个名为 $.GlobalCallBack.submitCallback的回调函数。继而完成和后端的交互。
-
- 用法：
- calss='notnull' 元素不能为空、勾选（复选框）
- class='select' 必选（下拉框）
- class='nullmsg'  验证失败之后的友好提示
- regex='/^$/' 当前需要验证的正则
- logicmsg='邮箱格式错误' 当前正则验证失败之后的友好提示
- 配置了指定的errorElement（错误提示元素），就会在页面上给出友好提示
-
- Global.submitCallback button回调函数
- Global.confirmCallback confirm回调函数;
- 需要改进的地方：
- 无
- 作者：layen.Xu
+ * 地址：https://github.com/xulayen/jquery.form.red
+ * 功能：表单验证
+ * 说明：在表单验证中，表单元素都需要不同程度的校验：比如是否可以为空（为空验证），是否要满足某一个条件（正则模式），长度校验（maxlength）。这些听起来都比较简单，
+ * 代码实现起来也不难，难的只是如何把表单验证模块化，可以运用在任何一个表单上面。同时，如果一个页面上有多个表单（注册、登录），在实现上诉各种验证（为空、正则）模式
+ * 的情况下，并且页面上N个表单并不会互相影响，并且能够通过配置达到理想中的效果，这时候你会想到比较常用JQUERY的插件http://malsup.github.com/jquery.form.js
+ * 英文文档地址： http://malsup.com/jquery/form/#api  或者类似 另外一个比较常用的JQUERY插件 https://github.com/ghorsey/jquery.validation/blob/master/jquery.validation.js
+ * 使用攻略：http://www.cnblogs.com/buzzlight/archive/2010/06/30/1768364.html 这些都比较好用。我想说一下，jquery.form.red适用于各种表单，入门比较简单，配置耦合性低，
+ * 基本不用配置太多的数组、对象，看起来很多、很冗余。只需要在表单元素上做相应的处理就可以了。
+ * 配置：
+ *      可用支配的对象：
+ *      body：                   当前页面表单元素的父容器，默认为body元素
+ *      formElement：            需要当前html块作为表单的标识，默认是拥有“.form”类样式的html块
+ *      errorElement            当前表单显示在一个地方的错误提示html块的样式类，默认为null，表示使用alert进行提示
+ *      isOneByOne              是否是每个表单元素单独给出友好提示，默认为false；如果设置为true，那么在当前表单元素的兄弟节点的位置设置一个html块并设置样式类为“.msg”
+ *
+ *      可用在表单元素上的属性：
+ *      class="notnull"         表示当前元素不能为空，这些元素可以是：input[type='text'],input[type='password'],input[type='tel'],input[type='number'],input[type='email'],textarea元素
+ *      nullmsg="Express"       和class="notnull"成对存在，表示元素为空时给出的友好提示，可以是任何形式的字符串
+ *
+ *      regex="/^ Express $/"   标识当前元素必须要满足的正则表达式，如电话、邮箱、字符等任何形式的正则
+ *      logicmsg="Express"      和regex="/^ Express $/"成存在，表示当前不满足正则时给出的友好提示，可以是任何形式的字符串
+ *
+ *
+ *      核心配置：
+ *      class="form"            此类样式和“可支配的对象”中的“formElement”保持一直，方可看作一个表单元素
+ *      class="check"           需要作为表单提交按钮的html块必须要加上类样式“.check”
+ *      class="confirm"         需要作为类似删除时的操作按钮
+ *
+ *      函数回调：
+ *      $.GlobalCallBack.submitCallback     html块拥有.check时，点击按钮时进行的回调，有多个表单时可根据obj.id来获取当前是哪个按钮触发的事件
+ *      $.GlobalCallBack.confirmCallback    html块拥有.confirm时，点击按钮时进行的回调，有多个表单时可根据obj.id来获取当前是哪个按钮触发的事件
+ *
+ *      $.GlobalCallBack.Callback = function (e) {
+ *           e = e || window.event;
+ *           var obj = e.srcElement ? e.srcElement : e.target;
+ *           alert(obj.id)
+ *       }
+ *
+ *
+ *       调用：
+ *       $(function(){
+ *           $(document).Action({body:'body',formElement:'.form',errorElement:'.error',isOneByOne:false});
+ *       });
+ *
+ *       $.GlobalCallBack.submitCallback = function (e) {
+ *           e = e || window.event;
+ *           var obj = e.srcElement ? e.srcElement : e.target;
+ *           alert(obj.id)
+ *       }
+ *
+ *       其他：
+ *       只有一个按钮的情况下，enter键有同样的效果
+ *
  */
 ;
 (function ($) {
@@ -131,7 +164,7 @@
             CheckInputRex: function (form) {
                 var action = this;
                 var b = true;
-                $(form).find("input[type='text'],input[type='password'],input[type='tel']").each(function () {
+                $(form).find("input[type='text'],input[type='password'],input[type='tel'],input[type='number'],input[type='email']").each(function () {
                     if (typeof ($(this).attr("regex")) == 'string') {
                         if ($.trim($(this).val()).length > 0 && $.trim($(this).val()) != $.trim($(this).attr("placeholder"))) {
                             //当前表单的值
@@ -148,7 +181,7 @@
                 if (opts.errorElement) {
                     $(ele).parents(opts.formElement).find(".error").text($(ele).attr(attr));
                     $(ele).parents(opts.formElement).find(".error").show();
-                }else if(opts.oneByOne){
+                }else if(opts.isOneByOne){
                     $($(ele).nextAll('.msg')[0]).html($(ele).attr(attr));
                     $($(ele).nextAll('.msg')[0]).show();
                 } else {
