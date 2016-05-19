@@ -14,11 +14,15 @@
  *      body：                   当前页面表单元素的父容器，默认为body元素
  *      formElement：            需要当前html块作为表单的标识，默认是拥有“.form”类样式的html块
  *      errorElement            当前表单显示在一个地方的错误提示html块的样式类，默认为null，表示使用alert进行提示
- *      isOneByOne              是否是每个表单元素单独给出友好提示，默认为false；如果设置为true，那么在当前表单元素的兄弟节点的位置设置一个html块并设置样式类为“.msg”
+ *      isOneByOne              是否是每个表单元素单独给出友好提示，默认为false；如果设置为true，那么在当前表单元素的兄弟节点的位置设置一个html块并设置样式类为“.msg”，
+ *                              当设置为true时，errorElement必须为null
  *
  *      可用在表单元素上的属性：
  *      class="notnull"         表示当前元素不能为空，这些元素可以是：input[type='text'],input[type='password'],input[type='tel'],input[type='number'],input[type='email'],textarea元素
- *      nullmsg="Express"       和class="notnull"成对存在，表示元素为空时给出的友好提示，可以是任何形式的字符串
+ *      class="select"          表示当前select元素不能为空的标识
+ *      nullmsg="Express"       和class="notnull"或class="select"成对存在，表示元素为空时给出的友好提示，可以是任何形式的字符串
+ *
+ *
  *
  *      regex="/^ Express $/"   标识当前元素必须要满足的正则表达式，如电话、邮箱、字符等任何形式的正则
  *      logicmsg="Express"      和regex="/^ Express $/"成存在，表示当前不满足正则时给出的友好提示，可以是任何形式的字符串
@@ -53,6 +57,9 @@
  *
  *       其他：
  *       只有一个按钮的情况下，enter键有同样的效果
+ *
+ *       需要改进的地方：
+ *       单个表单有单独的显示方式
  *
  */
 ;
@@ -182,6 +189,7 @@
                     $(ele).parents(opts.formElement).find(".error").text($(ele).attr(attr));
                     $(ele).parents(opts.formElement).find(".error").show();
                 }else if(opts.isOneByOne){
+                    debugger;
                     $($(ele).nextAll('.msg')[0]).html($(ele).attr(attr));
                     $($(ele).nextAll('.msg')[0]).show();
                 } else {
